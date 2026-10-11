@@ -1,66 +1,107 @@
 # ✍️ Handwriting Bar
 
-Nowoczesny, minimalistyczny panel pisma odręcznego (digital ink canvas) dla systemu Linux/Wayland (Hyprland / Omarchy / Sway), stworzony z myślą o laptopach 2-in-1, tabletach oraz użytkownikach rysików aktywnych (stylus) i ekranów dotykowych.
+A modern, lightweight digital ink handwriting recognition panel for Linux / Wayland (Hyprland, Omarchy, Sway, GNOME). Built specifically for 2-in-1 convertible laptops, tablets, and stylus users who want an Apple Scribble / Windows Ink experience on Linux.
 
-Pozwala pisać odręcznie rysikiem lub palcem u dołu ekranu i automatycznie wprowadza rozpoznany tekst w dowolne aktywne pole tekstowe (przeglądarka, terminal, edytor kodu, komunikator).
-
----
-
-## ✨ Funkcje
-
-* **Warstwa Wayland Layer Shell (`gtk4-layer-shell`):**
-  * Pływający dolny panel dokowany do dołu ekranu.
-  * **Brak kradzieży fokusu (`KeyboardMode.NONE`):** Możesz kliknąć w dowolne pole tekstowe (np. w Zen Browser czy Alacritty), a następnie pisać na panelu rysika – kursor tekstowy cały czas pozostaje w edytowanym oknie!
-* **Ultra-precyzyjny silnik Digital Ink Recognition:**
-  * Wektory pociągnięć ze znacznikami czasu przesyłane do silnika Digital Ink (tego samego co w Android/Gboard/ChromeOS).
-  * Rozpoznaje kursywę (pismo łączone), pojedyncze litery, cyfry, działania matematyczne (`1+1`), znaki specjalne i polskie znaki diakrytyczne.
-* **Kafelki z alternatywnymi podpowiedziami:**
-  * Wyświetla alternatywne warianty rozpoznania. Dotknięcie kafelka rysikiem natychmiast podmienia słowo w edytowanym polu!
-* **Tryb Offline (Tesseract Fallback):**
-  * W razie braku połączenia sieciowego automatycznie przełącza się na lokalny silnik OCR (Tesseract).
-* **Przyciski szybkiej kontroli:**
-  * `✓ Wyślij` – natychmiastowe zatwierdzenie tekstu bez czekania na automatyczny timer.
-  * `␣ Spacja` – dodanie spacji.
-  * `⌫ Cofnij` – usunięcie ostatniego znaku (Backspace).
-  * `↵ Enter` – zatwierdzenie/nowa linia.
-  * `✕ Wyczyść` – wyczyszczenie płótna.
-  * `✕ Schowaj` – schowanie panelu.
+Write naturally with a stylus or finger on the floating bottom canvas, and watch your handwritten words and math formulas automatically type directly into your active input field (browser, code editor, terminal, messenger) without stealing window focus.
 
 ---
 
-## 🚀 Wymagania
+## ✨ Features
 
-* **Python 3**
+* **Wayland Layer Shell (`gtk4-layer-shell`):**
+  * Anchored floating panel at the bottom of the screen.
+  * **Zero Focus Stealing (`KeyboardMode.NONE`):** You can tap any text field in an application (e.g. Zen Browser, VS Code, or Alacritty) and draw on the handwriting canvas—your active cursor remains focused inside the destination text field!
+* **High-Accuracy Digital Ink Recognition:**
+  * Uses stroke trajectory vectors with timestamps (the same engine powering Android, Gboard, and ChromeOS handwriting).
+  * Seamlessly recognizes cursive handwriting, print letters, numbers, math expressions (`1+1`), punctuation, and multi-language diacritics (including Polish, German, French, etc.).
+* **Interactive Candidate Suggestions:**
+  * Displays alternative recognition candidates as touchable chips above the canvas. Tapping an alternative candidate instantly replaces the typed word!
+* **Offline Fallback Engine (Tesseract OCR):**
+  * In case of no internet connectivity, the system automatically falls back to local Tesseract OCR.
+* **Control Actions:**
+  * `✓ Send` — Instantly process and inject handwritten text.
+  * `␣ Space` — Insert space.
+  * `⌫ Backspace` — Delete last character.
+  * `↵ Enter` — Confirm / newline.
+  * `✕ Clear` — Clear drawing canvas.
+  * `✕ Hide` — Minimize panel.
+
+---
+
+## 📦 Requirements
+
+* **Python 3.10+**
 * **GTK4** (`python-gobject`)
 * **gtk4-layer-shell**
-* **wtype** (do emulacji klawiatury w Waylandzie)
-* **tesseract** (jako silnik awaryjny offline)
+* **wtype** (for Wayland virtual keyboard text injection)
+* **tesseract** (for offline fallback)
 * **cairo** (`python-cairo`)
 
-Na Arch Linux / Omarchy:
+### Arch Linux / Omarchy
 ```bash
 sudo pacman -S python-gobject gtk4 gtk4-layer-shell wtype tesseract python-cairo
 ```
 
----
-
-## 🛠️ Uruchomienie
-
-W terminalu:
+### Fedora
 ```bash
-python3 handwriting_bar.py
-# lub z parametrem:
-./handwriting-bar.py toggle
+sudo dnf install python3-gobject gtk4 gtk4-layer-shell wtype tesseract python3-cairo
 ```
 
-### Integracja z Hyprland / Omarchy
-Możesz przypisać skrót klawiszowy w `~/.config/hypr/bindings.lua`:
+### Ubuntu / Debian (24.04+)
+```bash
+sudo apt install python3-gi gir1.2-gtk-4.0 libgtk4-layer-shell0 wtype tesseract-ocr python3-cairo
+```
+
+---
+
+## 🚀 Usage
+
+Launch the handwriting bar directly:
+```bash
+python3 handwriting_bar.py
+```
+
+Toggle show/hide:
+```bash
+./handwriting_bar.py toggle
+```
+
+### Hyprland Integration
+Bind a key combination in your `~/.config/hypr/bindings.lua` or `hyprland.conf`:
 ```lua
 o.bind("SUPER + H", "Handwriting Bar", "handwriting-bar")
 ```
-LUB dodać dotykową ikonę pióra (`󰏫`) bezpośrednio do paska zadań Omarchy (`omarchy-shell`).
+
+### Omarchy Top Bar Integration
+Add a stylus touch icon (`󰏫`) to your status bar so you can summon or dismiss the handwriting canvas with a single stylus tap in tablet mode.
 
 ---
 
-## 📄 Licencja
-Projekt udostępniany na licencji [MIT](LICENSE).
+## 🧩 Architecture
+
+```
+Stylus / Touch Event
+       │
+       ▼
+Gtk.GestureDrag (GTK4 DrawingArea)
+       │
+       ├──► Vector Strokes [(x, y, timestamp), ...]
+       │         │
+       │         ├──► Online: Google Digital Ink API (Primary, ~60ms)
+       │         └──► Offline: Cairo Normalization + Tesseract OCR (Fallback)
+       │
+       ▼
+Recognized Text + Suggestion Chips
+       │
+       ▼
+wtype (Wayland virtual-keyboard protocol)
+       │
+       ▼
+Active Window Text Input (Browser, Terminal, Editor)
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
